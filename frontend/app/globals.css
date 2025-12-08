@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: 'Inter', system-ui, sans-serif;
+  --font-playfair: 'Playfair Display', serif;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: #FFFFFF;
+  color: #000000;
+}
+
+body {
+  font-family: var(--font-inter);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Luxury minimal scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F5F5F5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #808080;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2C2C2C;
+}
+
+/* Custom utilities */
+@layer utilities {
+  .text-luxury {
+    font-family: var(--font-playfair);
+  }
+  
+  .border-luxury {
+    border-color: #C0C0C0;
+  }
+  
+  .bg-luxury-black {
+    background-color: #000000;
+  }
+  
+  .bg-luxury-white {
+    background-color: #FFFFFF;
+  }
+  
+  .bg-luxury-silver {
+    background-color: #C0C0C0;
+  }
+  
+  .text-luxury-black {
+    color: #000000;
+  }
+  
+  .text-luxury-white {
+    color: #FFFFFF;
+  }
+  
+  .text-luxury-silver {
+    color: #C0C0C0;
+  }
+  
+  /* Hero section overlay */
+  .hero-overlay {
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.3),
+      rgba(0, 0, 0, 0.4)
+    );
+  }
+  
+  /* Sticky header transition */
+  .header-sticky {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
