@@ -116,7 +116,7 @@ export default function AdminDashboardPage() {
                 href="/onglgyrmnkl-admin/dashboard/cms"
                 className="px-6 py-2 border border-luxury-black text-luxury-black hover:bg-luxury-light-gray transition-colors"
               >
-                Hakkımızda & Hizmetlerimiz
+                Hakkımızda &amp; Hizmetlerimiz
               </a>
             </div>
           </div>
