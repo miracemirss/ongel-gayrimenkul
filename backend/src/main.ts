@@ -23,7 +23,7 @@ async function bootstrap() {
   // CORS - Allow multiple origins for production
   const allowedOrigins = process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
-    : ['https://ongel-gayrimenkul-production.up.railway.app'];
+    : ['http://localhost:3000'];
   
   app.enableCors({
     origin: (origin, callback) => {
