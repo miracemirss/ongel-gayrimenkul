@@ -91,7 +91,7 @@ export default function Footer() {
             <h4 className="text-sm font-medium mb-4">{t_page('contact')}</h4>
             <ul className="space-y-2 text-sm text-luxury-silver dark:text-luxury-medium-gray">
               <li>Email: info@ongelgayrimenkul.com</li>
-              <li>Telefon: +90 (212) 123 45 67</li>
+              <li>Telefon: +90 533 572 95 14</li>
             </ul>
           </div>
           <div>
