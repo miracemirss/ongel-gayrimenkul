@@ -106,7 +106,7 @@ export default function Header() {
               )}
             </div>
             <Link href="/blog" className={navLinkClass(pathname === '/blog' || pathname.startsWith('/blog/'))}>
-              {t('nav.blog') || 'Blog'}
+              {t('nav.blog')}
             </Link>
             <Link href="/contact" className={navLinkClass(pathname === '/contact')}>
               {t('nav.contact')}

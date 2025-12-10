@@ -7,6 +7,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import api from '@/lib/api';
 import { useActivityTracker } from '@/hooks/useActivityTracker';
+import { TokenExpiryWarning } from '@/components/common/TokenExpiryWarning';
 
 interface CmsPage {
   id: string;
@@ -138,6 +139,17 @@ export default function CmsPage() {
       await loadPages();
     } catch (error: any) {
       console.error('Error saving CMS page:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+        },
+      });
+      
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error || 
                           'İçerik kaydedilirken bir hata oluştu.';
@@ -145,8 +157,27 @@ export default function CmsPage() {
       if (error.response?.status === 403) {
         alert(`Yetki hatası: ${errorMessage}\n\nLütfen admin yetkisine sahip bir kullanıcı ile giriş yaptığınızdan emin olun.`);
       } else if (error.response?.status === 401) {
-        alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
-        router.push('/onglgyrmnkl-admin');
+        // Check if token exists
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          alert('Oturum açık değil. Lütfen giriş yapın.');
+        } else {
+          // Token might be expired - try to decode and check
+          try {
+            const { isTokenExpired } = require('@/lib/token-utils');
+            if (isTokenExpired(token)) {
+              alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+            } else {
+              alert('Oturum hatası. Lütfen sayfayı yenileyip tekrar deneyin. Sorun devam ederse tekrar giriş yapın.');
+            }
+          } catch (e) {
+            alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+          }
+        }
+        // Don't redirect immediately - let user see the error
+        setTimeout(() => {
+          router.push('/onglgyrmnkl-admin');
+        }, 2000);
       } else {
         alert(errorMessage);
       }

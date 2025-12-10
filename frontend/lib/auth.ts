@@ -11,6 +11,19 @@ export interface AuthResponse {
   user: User;
 }
 
+// Import token utils dynamically to avoid circular dependencies
+let tokenUtils: any = null;
+function getTokenUtils() {
+  if (!tokenUtils && typeof window !== 'undefined') {
+    try {
+      tokenUtils = require('./token-utils');
+    } catch (e) {
+      console.warn('Token utils not available:', e);
+    }
+  }
+  return tokenUtils;
+}
+
 export const auth = {
   login: async (email: string, password: string): Promise<AuthResponse> => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/auth/login`, {
@@ -55,7 +68,42 @@ export const auth = {
 
   isAuthenticated: (): boolean => {
     if (typeof window === 'undefined') return false;
-    return !!localStorage.getItem('access_token');
+    const token = localStorage.getItem('access_token');
+    if (!token) return false;
+    
+    // Check if token is expired
+    const utils = getTokenUtils();
+    if (utils && utils.isTokenExpired) {
+      try {
+        if (utils.isTokenExpired(token)) {
+          // Token expired, clear it
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('user');
+          return false;
+        }
+      } catch (error) {
+        // If token validation fails, assume token is valid to avoid false negatives
+        console.warn('Token validation error:', error);
+      }
+    }
+    
+    return true;
+  },
+  
+  checkTokenValidity: (): boolean => {
+    if (typeof window === 'undefined') return false;
+    const token = localStorage.getItem('access_token');
+    if (!token) return false;
+    
+    const utils = getTokenUtils();
+    if (utils && utils.isTokenExpired) {
+      try {
+        return !utils.isTokenExpired(token);
+      } catch (error) {
+        return false;
+      }
+    }
+    return true; // If utils not available, assume valid
   },
 };
 

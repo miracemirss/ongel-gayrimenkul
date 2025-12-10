@@ -40,7 +40,9 @@ export class BlogService {
     search?: string,
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ posts: BlogPost[]; total: number; page: number; limit: number }> {
+    sortBy: string = 'createdAt',
+    sortOrder: 'ASC' | 'DESC' = 'DESC',
+  ): Promise<{ posts: BlogPost[]; total: number; page: number; limit: number; totalPages: number }> {
     const where: FindOptionsWhere<BlogPost> = {};
 
     if (status) {
@@ -51,28 +53,47 @@ export class BlogService {
       where.title = Like(`%${search}%`);
     }
 
+    // Validate sortBy field
+    const allowedSortFields = ['createdAt', 'updatedAt', 'publishedAt', 'title'];
+    const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
+    const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
     const [posts, total] = await this.blogPostRepository.findAndCount({
       where,
-      order: { createdAt: 'DESC' },
+      order: { [validSortBy]: validSortOrder },
       skip: (page - 1) * limit,
       take: limit,
     });
 
-    return { posts, total, page, limit };
+    return { posts, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findPublished(
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ posts: BlogPost[]; total: number; page: number; limit: number }> {
+    sortBy: string = 'publishedAt',
+    sortOrder: 'ASC' | 'DESC' = 'DESC',
+    search?: string,
+  ): Promise<{ posts: BlogPost[]; total: number; page: number; limit: number; totalPages: number }> {
+    const where: FindOptionsWhere<BlogPost> = { status: BlogPostStatus.Published };
+
+    if (search) {
+      where.title = Like(`%${search}%`);
+    }
+
+    // Validate sortBy field
+    const allowedSortFields = ['publishedAt', 'createdAt', 'updatedAt', 'title'];
+    const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'publishedAt';
+    const validSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
     const [posts, total] = await this.blogPostRepository.findAndCount({
-      where: { status: BlogPostStatus.Published },
-      order: { publishedAt: 'DESC' },
+      where,
+      order: { [validSortBy]: validSortOrder },
       skip: (page - 1) * limit,
       take: limit,
     });
 
-    return { posts, total, page, limit };
+    return { posts, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(id: string): Promise<BlogPost> {

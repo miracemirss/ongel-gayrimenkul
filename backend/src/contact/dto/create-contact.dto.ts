@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, MinLength } from 'class-validator';
+import { IsString, IsEmail, IsOptional, MinLength, ValidateIf } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateContactDto {
@@ -12,8 +12,8 @@ export class CreateContactDto {
   email: string;
 
   @ApiProperty({ description: 'Phone number (optional)', required: false })
-  @IsString()
   @IsOptional()
+  @IsString()
   phone?: string;
 
   @ApiProperty({ description: 'Message content' })
@@ -22,8 +22,8 @@ export class CreateContactDto {
   message: string;
 
   // Honeypot field for spam protection (should be empty)
-  @IsString()
+  // This field is optional and should be ignored if present
   @IsOptional()
-  website?: string; // Spam bots often fill this
+  website?: string; // Spam bots often fill this - validation skipped
 }
 

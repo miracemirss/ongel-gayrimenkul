@@ -16,7 +16,31 @@ export class EmailService {
     const smtpPassword = this.configService.get<string>('SMTP_PASSWORD');
     const smtpSecure = this.configService.get<string>('SMTP_SECURE', 'false') === 'true';
 
-    if (smtpHost && smtpUser && smtpPassword) {
+    // Check if SMTP is properly configured
+    if (!smtpHost || !smtpUser || !smtpPassword) {
+      this.logger.error(
+        'SMTP not configured. Email sending will fail.\n' +
+        'Please set the following environment variables:\n' +
+        '  - SMTP_HOST (e.g., smtp.hostinger.com)\n' +
+        '  - SMTP_USER (e.g., info@ongelgayrimenkul.com)\n' +
+        '  - SMTP_PASSWORD (your email password)\n' +
+        '  - SMTP_PORT (optional, default: 587)\n' +
+        '  - SMTP_SECURE (optional, default: false, use true for port 465)'
+      );
+      return; // Don't create transporter if not configured
+    }
+
+    // Validate SMTP host is not a placeholder
+    if (smtpHost.includes('example.com') || smtpHost.includes('placeholder')) {
+      this.logger.error(
+        `SMTP_HOST is set to a placeholder value: ${smtpHost}\n` +
+        'Please set SMTP_HOST to your actual SMTP server address.\n' +
+        'For Hostinger: smtp.hostinger.com or smtp.titan.email'
+      );
+      return;
+    }
+
+    try {
       this.transporter = nodemailer.createTransport({
         host: smtpHost,
         port: smtpPort,
@@ -25,11 +49,15 @@ export class EmailService {
           user: smtpUser,
           pass: smtpPassword,
         },
+        // Connection timeout
+        connectionTimeout: 10000, // 10 seconds
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
       });
-    } else {
-      // Fallback: Use Gmail or other service if SMTP not configured
-      // For production, you should configure SMTP properly
-      this.logger.warn('SMTP not configured. Email sending will fail. Please set SMTP_HOST, SMTP_USER, SMTP_PASSWORD');
+
+      this.logger.log(`Email service initialized with SMTP: ${smtpHost}:${smtpPort}`);
+    } catch (error) {
+      this.logger.error(`Failed to initialize email transporter: ${error.message}`, error.stack);
     }
   }
 
@@ -116,10 +144,19 @@ ${data.message}
 Gönderim Tarihi: ${submissionDate}
     `;
 
+    if (!this.transporter) {
+      const errorMsg = 'Email service is not configured. Please set SMTP environment variables.';
+      this.logger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+
     try {
       const smtpFrom = this.configService.get<string>('SMTP_FROM') || 
                        this.configService.get<string>('SMTP_USER') || 
                        'noreply@ongelgayrimenkul.com';
+      
+      // Verify connection before sending
+      await this.transporter.verify();
       
       await this.transporter.sendMail({
         from: smtpFrom,
@@ -131,9 +168,24 @@ Gönderim Tarihi: ${submissionDate}
       });
 
       this.logger.log(`Contact form email sent successfully to ${recipientEmail}`);
-    } catch (error) {
-      this.logger.error(`Failed to send contact form email: ${error.message}`, error.stack);
-      throw new Error('Failed to send email');
+    } catch (error: any) {
+      let errorMessage = 'E-posta gönderilemedi.';
+      
+      if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+        errorMessage = `SMTP sunucusuna bağlanılamadı: ${error.hostname || 'bilinmeyen'}. Lütfen SMTP_HOST ayarını kontrol edin.`;
+        this.logger.error(`SMTP connection error: ${error.code} - ${errorMessage}`);
+      } else if (error.code === 'EAUTH') {
+        errorMessage = 'SMTP kimlik doğrulama hatası. Lütfen SMTP_USER ve SMTP_PASSWORD ayarlarını kontrol edin.';
+        this.logger.error(`SMTP authentication error: ${errorMessage}`);
+      } else if (error.response) {
+        errorMessage = `SMTP sunucu hatası: ${error.response}`;
+        this.logger.error(`SMTP server error: ${error.response}`);
+      } else {
+        errorMessage = `E-posta gönderme hatası: ${error.message || 'Bilinmeyen hata'}`;
+        this.logger.error(`Failed to send contact form email: ${error.message}`, error.stack);
+      }
+      
+      throw new Error(errorMessage);
     }
   }
 

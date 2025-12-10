@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { auth } from '@/lib/auth';
 
-const INACTIVITY_TIMEOUT = 3 * 60 * 1000; // 3 dakika
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 dakika (3 dakika çok kısaydı)
 
 export function useActivityTracker() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);

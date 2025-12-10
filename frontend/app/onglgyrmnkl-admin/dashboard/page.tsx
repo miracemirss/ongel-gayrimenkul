@@ -7,6 +7,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import api from '@/lib/api';
 import { useActivityTracker } from '@/hooks/useActivityTracker';
+import { TokenExpiryWarning } from '@/components/common/TokenExpiryWarning';
 
 export const dynamic = 'force-dynamic';
 
@@ -140,6 +141,7 @@ export default function AdminDashboardPage() {
         </div>
       </main>
       <Footer />
+      <TokenExpiryWarning warningThreshold={5} />
     </>
   );
 }

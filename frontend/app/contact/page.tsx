@@ -57,13 +57,23 @@ export default function ContactPage() {
     setSubmitting(true);
 
     try {
-      await api.post('/contact', {
+      const payload: any = {
         fullName: formData.fullName.trim(),
         email: formData.email.trim(),
-        phone: formData.phone.trim() || undefined,
         message: formData.message.trim(),
-        website: formData.website, // Honeypot - should be empty
-      });
+      };
+      
+      // Only include phone if it has a value
+      if (formData.phone && formData.phone.trim()) {
+        payload.phone = formData.phone.trim();
+      }
+      
+      // Include honeypot field (should be empty)
+      if (formData.website !== undefined) {
+        payload.website = formData.website;
+      }
+      
+      await api.post('/contact', payload);
       setSubmitted(true);
       setFormData({ fullName: '', email: '', phone: '', message: '', website: '' });
     } catch (error: any) {

@@ -7,6 +7,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import api from '@/lib/api';
 import { useActivityTracker } from '@/hooks/useActivityTracker';
+import { TokenExpiryWarning } from '@/components/common/TokenExpiryWarning';
 
 interface BlogPost {
   id: string;
@@ -34,6 +35,12 @@ export default function BlogPage() {
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published'>('all');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [limit] = useState(10);
+  const [sortBy, setSortBy] = useState<'createdAt' | 'updatedAt' | 'publishedAt' | 'title'>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
 
   useEffect(() => {
     if (!auth.isAuthenticated()) {
@@ -42,21 +49,39 @@ export default function BlogPage() {
     }
 
     loadPosts();
-  }, [router]);
+  }, [router, page, statusFilter, searchTerm, sortBy, sortOrder]);
 
   const loadPosts = async () => {
     try {
+      setLoading(true);
       const params = new URLSearchParams();
       if (statusFilter !== 'all') {
         params.append('status', statusFilter);
       }
-      if (searchTerm) {
-        params.append('search', searchTerm);
+      if (searchTerm.trim()) {
+        params.append('search', searchTerm.trim());
       }
+      params.append('page', page.toString());
+      params.append('limit', limit.toString());
+      params.append('sortBy', sortBy);
+      params.append('sortOrder', sortOrder);
 
       const res = await api.get(`/blog/admin/all?${params.toString()}`);
-      const data = res.data?.posts || res.data || [];
-      setPosts(Array.isArray(data) ? data : []);
+      const data = res.data;
+      
+      if (data.posts) {
+        setPosts(data.posts);
+        setTotal(data.total);
+        setTotalPages(data.totalPages || Math.ceil(data.total / data.limit));
+      } else if (Array.isArray(data)) {
+        setPosts(data);
+        setTotal(data.length);
+        setTotalPages(1);
+      } else {
+        setPosts([]);
+        setTotal(0);
+        setTotalPages(1);
+      }
     } catch (err: any) {
       console.error('Error fetching blog posts:', err);
       if (err.response?.status === 403) {
@@ -117,7 +142,7 @@ export default function BlogPage() {
         await api.post('/blog', saveData);
         alert('Blog yazısı başarıyla oluşturuldu.');
       } else {
-        await api.patch(`/blog/${editingPost.id}`, saveData);
+        await api.patch(`/blog/admin/${editingPost.id}`, saveData);
         alert('Blog yazısı başarıyla güncellendi.');
       }
       await loadPosts();
@@ -147,7 +172,7 @@ export default function BlogPage() {
       return;
     }
     try {
-      await api.delete(`/blog/${postId}`);
+      await api.delete(`/blog/admin/${postId}`);
       alert('Blog yazısı başarıyla silindi.');
       await loadPosts();
       if (editingPost?.id === postId) {
@@ -217,8 +242,13 @@ export default function BlogPage() {
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
-                    // Debounce search - reload after user stops typing
-                    setTimeout(() => loadPosts(), 500);
+                    setPage(1); // Reset to first page on search
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      loadPosts();
+                    }
                   }}
                   className="w-full px-3 py-2 border border-luxury-silver focus:outline-none focus:border-luxury-black text-sm"
                 />
@@ -226,7 +256,7 @@ export default function BlogPage() {
                   value={statusFilter}
                   onChange={(e) => {
                     setStatusFilter(e.target.value as 'all' | 'draft' | 'published');
-                    loadPosts();
+                    setPage(1); // Reset to first page on filter change
                   }}
                   className="w-full px-3 py-2 border border-luxury-silver focus:outline-none focus:border-luxury-black text-sm"
                 >
@@ -234,6 +264,43 @@ export default function BlogPage() {
                   <option value="published">Yayınlanan</option>
                   <option value="draft">Taslak</option>
                 </select>
+                <div className="flex gap-2">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => {
+                      setSortBy(e.target.value as typeof sortBy);
+                      setPage(1);
+                    }}
+                    className="flex-1 px-3 py-2 border border-luxury-silver focus:outline-none focus:border-luxury-black text-sm"
+                  >
+                    <option value="createdAt">Oluşturulma</option>
+                    <option value="updatedAt">Güncelleme</option>
+                    <option value="publishedAt">Yayın Tarihi</option>
+                    <option value="title">Başlık</option>
+                  </select>
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => {
+                      setSortOrder(e.target.value as typeof sortOrder);
+                      setPage(1);
+                    }}
+                    className="flex-1 px-3 py-2 border border-luxury-silver focus:outline-none focus:border-luxury-black text-sm"
+                  >
+                    <option value="DESC">Azalan</option>
+                    <option value="ASC">Artan</option>
+                  </select>
+                </div>
+                {searchTerm && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setPage(1);
+                    }}
+                    className="w-full px-3 py-2 text-sm border border-luxury-silver hover:bg-luxury-light-gray"
+                  >
+                    Arama Temizle
+                  </button>
+                )}
               </div>
 
               <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -261,12 +328,56 @@ export default function BlogPage() {
                     </button>
                   </div>
                 ))}
-                {posts.length === 0 && (
+                {posts.length === 0 && !loading && (
                   <p className="text-sm text-luxury-medium-gray text-center py-4">
                     Blog yazısı bulunamadı.
                   </p>
                 )}
+                {loading && (
+                  <p className="text-sm text-luxury-medium-gray text-center py-4">
+                    Yükleniyor...
+                  </p>
+                )}
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-4 pt-4 border-t border-luxury-silver flex justify-between items-center flex-wrap gap-2">
+                  <span className="text-xs text-luxury-medium-gray">
+                    Toplam {total} yazı, Sayfa {page} / {totalPages}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPage(1)}
+                      disabled={page === 1}
+                      className="px-3 py-1 text-xs border border-luxury-silver hover:bg-luxury-light-gray disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      İlk
+                    </button>
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="px-3 py-1 text-xs border border-luxury-silver hover:bg-luxury-light-gray disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Önceki
+                    </button>
+                    <button
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="px-3 py-1 text-xs border border-luxury-silver hover:bg-luxury-light-gray disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Sonraki
+                    </button>
+                    <button
+                      onClick={() => setPage(totalPages)}
+                      disabled={page === totalPages}
+                      className="px-3 py-1 text-xs border border-luxury-silver hover:bg-luxury-light-gray disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Son
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-2">
@@ -438,6 +549,7 @@ export default function BlogPage() {
         </div>
       </main>
       <Footer />
+      <TokenExpiryWarning warningThreshold={5} />
     </>
   );
 }

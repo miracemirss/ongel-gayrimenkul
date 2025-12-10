@@ -16,6 +16,11 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: 'Öngel Gayrimenkul - Luxury Real Estate',
   description: 'Lüks emlak ve finansal danışmanlık uzmanlığı',
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 
 export default function RootLayout({
