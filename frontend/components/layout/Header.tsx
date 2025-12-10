@@ -105,6 +105,9 @@ export default function Header() {
                 </div>
               )}
             </div>
+            <Link href="/blog" className={navLinkClass(pathname === '/blog' || pathname.startsWith('/blog/'))}>
+              {t('nav.blog') || 'Blog'}
+            </Link>
             <Link href="/contact" className={navLinkClass(pathname === '/contact')}>
               {t('nav.contact')}
             </Link>
@@ -198,6 +201,17 @@ export default function Header() {
                 </div>
               )}
             </div>
+            <Link
+              href="/blog"
+              className={`block py-3 text-lg border-b border-luxury-silver ${
+                pathname === '/blog' || pathname.startsWith('/blog/')
+                  ? 'text-luxury-black font-semibold'
+                  : 'text-luxury-medium-gray'
+              }`}
+              onClick={closeMobileMenu}
+            >
+              {t('nav.blog') || 'Blog'}
+            </Link>
             <Link
               href="/contact"
               className={`block py-3 text-lg border-b border-luxury-silver ${

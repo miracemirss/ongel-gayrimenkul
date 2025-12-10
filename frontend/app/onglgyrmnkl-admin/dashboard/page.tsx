@@ -124,6 +124,12 @@ export default function AdminDashboardPage() {
                 CMS Sayfaları
               </a>
               <a
+                href="/onglgyrmnkl-admin/dashboard/blog"
+                className="px-6 py-2 border border-luxury-black text-luxury-black hover:bg-luxury-light-gray transition-colors"
+              >
+                Blog Yönetimi
+              </a>
+              <a
                 href="/onglgyrmnkl-admin/dashboard/navigation"
                 className="px-6 py-2 border border-luxury-black text-luxury-black hover:bg-luxury-light-gray transition-colors"
               >

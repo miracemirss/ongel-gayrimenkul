@@ -63,8 +63,15 @@ export default function CmsPage() {
           setFormData(servicesPage);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching CMS pages:', err);
+      if (err.response?.status === 403) {
+        alert('Bu sayfaya erişim yetkiniz yok. Lütfen admin yetkisine sahip bir kullanıcı ile giriş yapın.');
+        router.push('/onglgyrmnkl-admin/dashboard');
+      } else if (err.response?.status === 401) {
+        alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        router.push('/onglgyrmnkl-admin');
+      }
     } finally {
       setLoading(false);
     }
@@ -131,7 +138,18 @@ export default function CmsPage() {
       await loadPages();
     } catch (error: any) {
       console.error('Error saving CMS page:', error);
-      alert(error.response?.data?.message || 'İçerik kaydedilirken bir hata oluştu.');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'İçerik kaydedilirken bir hata oluştu.';
+      
+      if (error.response?.status === 403) {
+        alert(`Yetki hatası: ${errorMessage}\n\nLütfen admin yetkisine sahip bir kullanıcı ile giriş yaptığınızdan emin olun.`);
+      } else if (error.response?.status === 401) {
+        alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        router.push('/onglgyrmnkl-admin');
+      } else {
+        alert(errorMessage);
+      }
     } finally {
       setSaving(false);
     }

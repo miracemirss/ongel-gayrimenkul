@@ -11,6 +11,8 @@ import { CmsModule } from './cms/cms.module';
 import { StorageModule } from './storage/storage.module';
 import { FooterModule } from './footer/footer.module';
 import { NavigationModule } from './navigation/navigation.module';
+import { ContactModule } from './contact/contact.module';
+import { BlogModule } from './blog/blog.module';
 
 @Module({
   imports: [
@@ -69,6 +71,8 @@ import { NavigationModule } from './navigation/navigation.module';
     StorageModule,
     FooterModule,
     NavigationModule,
+    ContactModule,
+    BlogModule,
   ],
   providers: [
     // Apply rate limiting globally

@@ -9,29 +9,69 @@ import api from '@/lib/api';
 export default function ContactPage() {
   const { t, language } = useLanguage();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    fullName: '',
     email: '',
     phone: '',
     message: '',
+    website: '', // Honeypot field for spam protection
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.fullName || formData.fullName.trim().length < 3) {
+      errors.fullName = 'Ad Soyad en az 3 karakter olmalıdır';
+    }
+
+    if (!formData.email) {
+      errors.email = 'E-posta adresi gereklidir';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Geçerli bir e-posta adresi giriniz';
+    }
+
+    if (formData.phone && !/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
+      errors.phone = 'Geçerli bir telefon numarası giriniz';
+    }
+
+    if (!formData.message || formData.message.trim().length < 10) {
+      errors.message = 'Mesaj en az 10 karakter olmalıdır';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setValidationErrors({});
+
+    if (!validateForm()) {
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      await api.post('/leads', {
-        ...formData,
-        source: 'contact_form',
+      await api.post('/contact', {
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || undefined,
+        message: formData.message.trim(),
+        website: formData.website, // Honeypot - should be empty
       });
       setSubmitted(true);
-      setFormData({ firstName: '', lastName: '', email: '', phone: '', message: '' });
-    } catch (error) {
+      setFormData({ fullName: '', email: '', phone: '', message: '', website: '' });
+    } catch (error: any) {
       console.error('Error submitting form:', error);
-      alert('Form gönderilirken bir hata oluştu. Lütfen tekrar deneyin.');
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Form gönderilirken bir hata oluştu. Lütfen tekrar deneyin.';
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -41,11 +81,11 @@ export default function ContactPage() {
     tr: {
       title: 'İletişim',
       subtitle: 'Bizimle iletişime geçin',
-      firstName: 'Ad',
-      lastName: 'Soyad',
+      fullName: 'Ad Soyad',
       email: 'E-posta',
       phone: 'Telefon',
       message: 'Mesaj',
+      optional: 'İsteğe bağlı',
       submit: 'Gönder',
       submitting: 'Gönderiliyor...',
       success: 'Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.',
@@ -53,11 +93,11 @@ export default function ContactPage() {
     en: {
       title: 'Contact',
       subtitle: 'Get in touch with us',
-      firstName: 'First Name',
-      lastName: 'Last Name',
+      fullName: 'Full Name',
       email: 'Email',
       phone: 'Phone',
       message: 'Message',
+      optional: 'Optional',
       submit: 'Submit',
       submitting: 'Submitting...',
       success: 'Your message has been sent successfully. We will get back to you soon.',
@@ -65,11 +105,11 @@ export default function ContactPage() {
     ar: {
       title: 'اتصل بنا',
       subtitle: 'تواصل معنا',
-      firstName: 'الاسم الأول',
-      lastName: 'اسم العائلة',
+      fullName: 'الاسم الكامل',
       email: 'البريد الإلكتروني',
       phone: 'الهاتف',
       message: 'الرسالة',
+      optional: 'اختياري',
       submit: 'إرسال',
       submitting: 'جاري الإرسال...',
       success: 'تم إرسال رسالتك بنجاح. سنعود إليك قريباً.',
@@ -91,39 +131,53 @@ export default function ContactPage() {
           </p>
 
           {submitted && (
-            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200">
+            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 rounded">
               {t_page('success')}
             </div>
           )}
 
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 rounded">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-luxury-black dark:text-luxury-white mb-2">
-                  {t_page('firstName')}
-                </label>
-                <input
-                  id="firstName"
-                  type="text"
-                  required
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  className="w-full px-4 py-2 border border-luxury-silver dark:border-luxury-dark-gray bg-luxury-white dark:bg-luxury-black text-luxury-black dark:text-luxury-white focus:outline-none focus:border-luxury-black dark:focus:border-luxury-white transition-colors"
-                />
-              </div>
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-luxury-black dark:text-luxury-white mb-2">
-                  {t_page('lastName')}
-                </label>
-                <input
-                  id="lastName"
-                  type="text"
-                  required
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  className="w-full px-4 py-2 border border-luxury-silver dark:border-luxury-dark-gray bg-luxury-white dark:bg-luxury-black text-luxury-black dark:text-luxury-white focus:outline-none focus:border-luxury-black dark:focus:border-luxury-white transition-colors"
-                />
-              </div>
+            {/* Honeypot field - hidden from users */}
+            <input
+              type="text"
+              name="website"
+              value={formData.website}
+              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+              style={{ display: 'none' }}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-luxury-black dark:text-luxury-white mb-2">
+                {t_page('fullName')}
+              </label>
+              <input
+                id="fullName"
+                type="text"
+                required
+                value={formData.fullName}
+                onChange={(e) => {
+                  setFormData({ ...formData, fullName: e.target.value });
+                  if (validationErrors.fullName) {
+                    setValidationErrors({ ...validationErrors, fullName: '' });
+                  }
+                }}
+                className={`w-full px-4 py-2 border ${
+                  validationErrors.fullName
+                    ? 'border-red-500'
+                    : 'border-luxury-silver dark:border-luxury-dark-gray'
+                } bg-luxury-white dark:bg-luxury-black text-luxury-black dark:text-luxury-white focus:outline-none focus:border-luxury-black dark:focus:border-luxury-white transition-colors`}
+              />
+              {validationErrors.fullName && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{validationErrors.fullName}</p>
+              )}
             </div>
 
             <div>
@@ -135,23 +189,46 @@ export default function ContactPage() {
                 type="email"
                 required
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 border border-luxury-silver dark:border-luxury-dark-gray bg-luxury-white dark:bg-luxury-black text-luxury-black dark:text-luxury-white focus:outline-none focus:border-luxury-black dark:focus:border-luxury-white transition-colors"
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value });
+                  if (validationErrors.email) {
+                    setValidationErrors({ ...validationErrors, email: '' });
+                  }
+                }}
+                className={`w-full px-4 py-2 border ${
+                  validationErrors.email
+                    ? 'border-red-500'
+                    : 'border-luxury-silver dark:border-luxury-dark-gray'
+                } bg-luxury-white dark:bg-luxury-black text-luxury-black dark:text-luxury-white focus:outline-none focus:border-luxury-black dark:focus:border-luxury-white transition-colors`}
               />
+              {validationErrors.email && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{validationErrors.email}</p>
+              )}
             </div>
 
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-luxury-black dark:text-luxury-white mb-2">
-                {t_page('phone')}
+                {t_page('phone')} <span className="text-luxury-medium-gray text-xs">({t_page('optional')})</span>
               </label>
               <input
                 id="phone"
                 type="tel"
-                required
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2 border border-luxury-silver dark:border-luxury-dark-gray bg-luxury-white dark:bg-luxury-black text-luxury-black dark:text-luxury-white focus:outline-none focus:border-luxury-black dark:focus:border-luxury-white transition-colors"
+                onChange={(e) => {
+                  setFormData({ ...formData, phone: e.target.value });
+                  if (validationErrors.phone) {
+                    setValidationErrors({ ...validationErrors, phone: '' });
+                  }
+                }}
+                className={`w-full px-4 py-2 border ${
+                  validationErrors.phone
+                    ? 'border-red-500'
+                    : 'border-luxury-silver dark:border-luxury-dark-gray'
+                } bg-luxury-white dark:bg-luxury-black text-luxury-black dark:text-luxury-white focus:outline-none focus:border-luxury-black dark:focus:border-luxury-white transition-colors`}
               />
+              {validationErrors.phone && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{validationErrors.phone}</p>
+              )}
             </div>
 
             <div>
@@ -163,9 +240,21 @@ export default function ContactPage() {
                 rows={6}
                 required
                 value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                className="w-full px-4 py-2 border border-luxury-silver dark:border-luxury-dark-gray bg-luxury-white dark:bg-luxury-black text-luxury-black dark:text-luxury-white focus:outline-none focus:border-luxury-black dark:focus:border-luxury-white transition-colors"
+                onChange={(e) => {
+                  setFormData({ ...formData, message: e.target.value });
+                  if (validationErrors.message) {
+                    setValidationErrors({ ...validationErrors, message: '' });
+                  }
+                }}
+                className={`w-full px-4 py-2 border ${
+                  validationErrors.message
+                    ? 'border-red-500'
+                    : 'border-luxury-silver dark:border-luxury-dark-gray'
+                } bg-luxury-white dark:bg-luxury-black text-luxury-black dark:text-luxury-white focus:outline-none focus:border-luxury-black dark:focus:border-luxury-white transition-colors`}
               />
+              {validationErrors.message && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{validationErrors.message}</p>
+              )}
             </div>
 
             <button
