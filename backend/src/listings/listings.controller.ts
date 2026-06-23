@@ -116,10 +116,11 @@ export class ListingsController {
   @UsePipes(new UuidValidationPipe())
   @ApiBearerAuth()
   @UseInterceptors(
-    FilesInterceptor('images', 10, {
+    FilesInterceptor('images', 30, {
       storage: multer.memoryStorage(),
       limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB
+        fileSize: 10 * 1024 * 1024, // 10MB per file
+        files: 30,
       },
       fileFilter: (req: any, file: Express.Multer.File, cb: any) => {
         if (file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {

@@ -30,6 +30,7 @@ export class BlogService {
       ...createBlogPostDto,
       slug,
       publishedAt,
+      language: createBlogPostDto.language || 'tr',
     });
 
     return this.blogPostRepository.save(blogPost);
@@ -42,11 +43,16 @@ export class BlogService {
     limit: number = 10,
     sortBy: string = 'createdAt',
     sortOrder: 'ASC' | 'DESC' = 'DESC',
+    language?: string,
   ): Promise<{ posts: BlogPost[]; total: number; page: number; limit: number; totalPages: number }> {
     const where: FindOptionsWhere<BlogPost> = {};
 
     if (status) {
       where.status = status;
+    }
+
+    if (language) {
+      where.language = language;
     }
 
     if (search) {
@@ -74,8 +80,13 @@ export class BlogService {
     sortBy: string = 'publishedAt',
     sortOrder: 'ASC' | 'DESC' = 'DESC',
     search?: string,
+    language?: string,
   ): Promise<{ posts: BlogPost[]; total: number; page: number; limit: number; totalPages: number }> {
     const where: FindOptionsWhere<BlogPost> = { status: BlogPostStatus.Published };
+
+    if (language) {
+      where.language = language;
+    }
 
     if (search) {
       where.title = Like(`%${search}%`);
@@ -104,10 +115,12 @@ export class BlogService {
     return post;
   }
 
-  async findBySlug(slug: string): Promise<BlogPost> {
-    const post = await this.blogPostRepository.findOne({
-      where: { slug, status: BlogPostStatus.Published },
-    });
+  async findBySlug(slug: string, language?: string): Promise<BlogPost> {
+    const where: FindOptionsWhere<BlogPost> = { slug, status: BlogPostStatus.Published };
+    if (language) {
+      where.language = language;
+    }
+    const post = await this.blogPostRepository.findOne({ where });
     if (!post) {
       throw new NotFoundException(`Blog post with slug ${slug} not found or not published`);
     }

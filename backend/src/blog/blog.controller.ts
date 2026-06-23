@@ -33,12 +33,14 @@ export class BlogController {
   @ApiQuery({ name: 'sortBy', required: false, type: String, enum: ['publishedAt', 'createdAt', 'updatedAt', 'title'] })
   @ApiQuery({ name: 'sortOrder', required: false, type: String, enum: ['ASC', 'DESC'] })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'language', required: false, type: String, enum: ['tr', 'en', 'ar'] })
   findPublished(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
     @Query('search') search?: string,
+    @Query('language') language?: string,
   ) {
     return this.blogService.findPublished(
       page ? parseInt(page, 10) : 1,
@@ -46,6 +48,7 @@ export class BlogController {
       sortBy || 'publishedAt',
       sortOrder || 'DESC',
       search,
+      language,
     );
   }
 
@@ -60,6 +63,7 @@ export class BlogController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'sortBy', required: false, type: String, enum: ['createdAt', 'updatedAt', 'publishedAt', 'title'] })
   @ApiQuery({ name: 'sortOrder', required: false, type: String, enum: ['ASC', 'DESC'] })
+  @ApiQuery({ name: 'language', required: false, type: String, enum: ['tr', 'en', 'ar'] })
   findAll(
     @Query('status') status?: BlogPostStatus,
     @Query('search') search?: string,
@@ -67,6 +71,7 @@ export class BlogController {
     @Query('limit') limit?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+    @Query('language') language?: string,
   ) {
     return this.blogService.findAll(
       status,
@@ -75,6 +80,7 @@ export class BlogController {
       limit ? parseInt(limit, 10) : 10,
       sortBy || 'createdAt',
       sortOrder || 'DESC',
+      language,
     );
   }
 
@@ -117,8 +123,9 @@ export class BlogController {
   @Public()
   @Get(':slug')
   @ApiOperation({ summary: 'Get published blog post by slug (Public)' })
-  findBySlug(@Param('slug') slug: string) {
-    return this.blogService.findBySlug(slug);
+  @ApiQuery({ name: 'language', required: false, type: String, enum: ['tr', 'en', 'ar'] })
+  findBySlug(@Param('slug') slug: string, @Query('language') language?: string) {
+    return this.blogService.findBySlug(slug, language);
   }
 }
 

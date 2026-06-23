@@ -7,6 +7,8 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import api from '@/lib/api';
 import { useActivityTracker } from '@/hooks/useActivityTracker';
+import ImageUploadZone from '@/components/admin/ImageUploadZone';
+import { uploadListingImages } from '@/lib/listingImages';
 
 interface Listing {
   id: string;
@@ -120,21 +122,13 @@ export default function EditListingPage() {
 
       // Upload new images if provided
       if (imageFiles.length > 0) {
-        const formDataImages = new FormData();
-        imageFiles.forEach((file) => {
-          formDataImages.append('images', file);
-        });
-
         try {
-          const imageResponse = await api.post(`/listings/${id}/images`, formDataImages, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
-          console.log('Images uploaded successfully:', imageResponse.data);
+          const { uploaded, failed } = await uploadListingImages(id, imageFiles);
+          if (failed > 0) {
+            alert(`${uploaded} fotoğraf yüklendi, ${failed} fotoğraf yüklenemedi.`);
+          }
         } catch (imageError: any) {
           console.error('Error uploading images:', imageError);
-          console.error('Error details:', imageError.response?.data);
           alert('Fotoğraflar yüklenirken bir hata oluştu: ' + (imageError.response?.data?.message || imageError.message));
         }
       }
@@ -148,24 +142,9 @@ export default function EditListingPage() {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setImageFiles([...imageFiles, ...files]);
-      
-      files.forEach((file) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImagePreviews([...imagePreviews, reader.result as string]);
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setImageFiles(imageFiles.filter((_, i) => i !== index));
-    setImagePreviews(imagePreviews.filter((_, i) => i !== index));
+  const handleFilesChange = (files: File[], previews: string[]) => {
+    setImageFiles(files);
+    setImagePreviews(previews);
   };
 
   const removeExistingImage = async (imageId: string) => {
@@ -466,36 +445,12 @@ export default function EditListingPage() {
                     <p className="text-sm text-luxury-medium-gray">Henüz fotoğraf yok.</p>
                   )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-luxury-black mb-2">Yeni Fotoğraflar Ekle</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageChange}
-                    className="w-full px-4 py-2 border border-luxury-silver focus:outline-none focus:border-luxury-black mb-4"
-                  />
-                  {imagePreviews.length > 0 && (
-                    <div className="grid grid-cols-3 gap-4 mt-4">
-                      {imagePreviews.map((preview, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={preview}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-32 object-cover border border-luxury-silver"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute top-2 right-2 px-2 py-1 bg-red-600 text-white text-xs hover:bg-red-700"
-                          >
-                            Sil
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <ImageUploadZone
+                  files={imageFiles}
+                  previews={imagePreviews}
+                  onFilesChange={handleFilesChange}
+                  label="Yeni Fotoğraflar Ekle"
+                />
               </div>
             </div>
 

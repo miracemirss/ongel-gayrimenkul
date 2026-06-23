@@ -17,6 +17,7 @@ interface BlogPost {
   content: string;
   coverImageUrl?: string;
   status: 'draft' | 'published';
+  language?: string;
   publishedAt?: string;
   seoTitle?: string;
   seoDescription?: string;
@@ -41,6 +42,7 @@ export default function BlogPage() {
   const [limit] = useState(10);
   const [sortBy, setSortBy] = useState<'createdAt' | 'updatedAt' | 'publishedAt' | 'title'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
+  const [languageFilter, setLanguageFilter] = useState<'all' | 'tr' | 'en' | 'ar'>('all');
 
   useEffect(() => {
     if (!auth.isAuthenticated()) {
@@ -49,7 +51,7 @@ export default function BlogPage() {
     }
 
     loadPosts();
-  }, [router, page, statusFilter, searchTerm, sortBy, sortOrder]);
+  }, [router, page, statusFilter, searchTerm, sortBy, sortOrder, languageFilter]);
 
   const loadPosts = async () => {
     try {
@@ -57,6 +59,9 @@ export default function BlogPage() {
       const params = new URLSearchParams();
       if (statusFilter !== 'all') {
         params.append('status', statusFilter);
+      }
+      if (languageFilter !== 'all') {
+        params.append('language', languageFilter);
       }
       if (searchTerm.trim()) {
         params.append('search', searchTerm.trim());
@@ -110,6 +115,7 @@ export default function BlogPage() {
       content: '',
       coverImageUrl: '',
       status: 'draft',
+      language: 'tr',
       seoTitle: '',
       seoDescription: '',
       seoKeywords: '',
@@ -132,6 +138,7 @@ export default function BlogPage() {
         content: formData.content,
         coverImageUrl: formData.coverImageUrl,
         status: formData.status || 'draft',
+        language: formData.language || 'tr',
         publishedAt: formData.publishedAt,
         seoTitle: formData.seoTitle,
         seoDescription: formData.seoDescription,
@@ -264,6 +271,19 @@ export default function BlogPage() {
                   <option value="published">Yayınlanan</option>
                   <option value="draft">Taslak</option>
                 </select>
+                <select
+                  value={languageFilter}
+                  onChange={(e) => {
+                    setLanguageFilter(e.target.value as 'all' | 'tr' | 'en' | 'ar');
+                    setPage(1);
+                  }}
+                  className="w-full px-3 py-2 border border-luxury-silver focus:outline-none focus:border-luxury-black text-sm"
+                >
+                  <option value="all">Tüm Diller</option>
+                  <option value="tr">Türkçe</option>
+                  <option value="en">English</option>
+                  <option value="ar">العربية</option>
+                </select>
                 <div className="flex gap-2">
                   <select
                     value={sortBy}
@@ -316,7 +336,7 @@ export default function BlogPage() {
                     >
                       <div className="font-medium truncate">{post.title}</div>
                       <div className="text-xs text-luxury-medium-gray">
-                        {post.status === 'published' ? '✓ Yayında' : '📝 Taslak'}
+                        {post.status === 'published' ? '✓ Yayında' : '📝 Taslak'} | {post.language?.toUpperCase() || 'TR'}
                       </div>
                     </button>
                     <button
@@ -452,7 +472,21 @@ export default function BlogPage() {
                       />
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-luxury-black mb-2">
+                          Dil
+                        </label>
+                        <select
+                          value={formData.language || 'tr'}
+                          onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                          className="w-full px-4 py-2 border border-luxury-silver focus:outline-none focus:border-luxury-black"
+                        >
+                          <option value="tr">Türkçe</option>
+                          <option value="en">English</option>
+                          <option value="ar">العربية</option>
+                        </select>
+                      </div>
                       <div>
                         <label className="block text-sm font-medium text-luxury-black mb-2">
                           Durum

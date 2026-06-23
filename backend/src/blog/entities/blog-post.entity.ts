@@ -50,6 +50,9 @@ export class BlogPost {
   @Column('text', { nullable: true })
   seoKeywords: string;
 
+  @Column({ type: 'varchar', length: 2, default: 'tr' })
+  language: string; // 'tr', 'en', 'ar'
+
   @CreateDateColumn()
   createdAt: Date;
 

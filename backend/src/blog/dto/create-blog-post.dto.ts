@@ -52,5 +52,10 @@ export class CreateBlogPostDto {
   @IsString()
   @IsOptional()
   seoKeywords?: string;
+
+  @ApiProperty({ description: 'Language code (tr, en, ar)', default: 'tr', required: false })
+  @IsString()
+  @IsOptional()
+  language?: string;
 }
 

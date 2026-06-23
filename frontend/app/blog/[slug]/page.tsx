@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import api from '@/lib/api';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BlogPost {
   id: string;
@@ -24,6 +25,7 @@ interface BlogPost {
 }
 
 export default function BlogPostPage() {
+  const { language, t } = useLanguage();
   const params = useParams();
   const slug = params?.slug as string;
   const [post, setPost] = useState<BlogPost | null>(null);
@@ -34,20 +36,20 @@ export default function BlogPostPage() {
     if (slug) {
       loadPost();
     }
-  }, [slug]);
+  }, [slug, language]);
 
   const loadPost = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await api.get(`/blog/${slug}`);
+      const res = await api.get(`/blog/${slug}?language=${language}`);
       setPost(res.data);
     } catch (err: any) {
       console.error('Error fetching blog post:', err);
       if (err.response?.status === 404) {
-        setError('Blog yazısı bulunamadı.');
+        setError(t('blog.notFound'));
       } else {
-        setError('Blog yazısı yüklenirken bir hata oluştu.');
+        setError(t('blog.error') || 'Blog yazısı yüklenirken bir hata oluştu.');
       }
     } finally {
       setLoading(false);
@@ -56,7 +58,8 @@ export default function BlogPostPage() {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString('tr-TR', {
+    const locale = language === 'tr' ? 'tr-TR' : language === 'en' ? 'en-US' : 'ar-SA';
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -69,7 +72,7 @@ export default function BlogPostPage() {
         <Header />
         <main className="min-h-screen pt-20 bg-luxury-white dark:bg-luxury-black">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="text-center text-luxury-medium-gray">Yükleniyor...</div>
+            <div className="text-center text-luxury-medium-gray">{t('blog.loading')}</div>
           </div>
         </main>
         <Footer />
@@ -85,13 +88,13 @@ export default function BlogPostPage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center">
               <h1 className="text-3xl font-serif mb-4 text-luxury-black dark:text-luxury-white">
-                {error || 'Blog yazısı bulunamadı'}
+                {error || t('blog.notFound')}
               </h1>
               <Link
                 href="/blog"
                 className="text-luxury-medium-gray hover:text-luxury-black dark:hover:text-luxury-white"
               >
-                ← Blog sayfasına dön
+                {t('blog.backToBlog')}
               </Link>
             </div>
           </div>
@@ -110,7 +113,7 @@ export default function BlogPostPage() {
             href="/blog"
             className="inline-block mb-6 text-luxury-medium-gray hover:text-luxury-black dark:hover:text-luxury-white"
           >
-            ← Blog sayfasına dön
+            {t('blog.backToBlog')}
           </Link>
 
           {post.coverImageUrl && (
@@ -147,7 +150,7 @@ export default function BlogPostPage() {
               href="/blog"
               className="text-luxury-medium-gray hover:text-luxury-black dark:hover:text-luxury-white"
             >
-              ← Tüm blog yazılarına dön
+              {t('blog.backToAll')}
             </Link>
           </div>
         </article>

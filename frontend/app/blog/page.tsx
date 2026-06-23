@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import api from '@/lib/api';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BlogPost {
   id: string;
@@ -23,6 +24,7 @@ interface BlogPost {
 }
 
 export default function BlogPage() {
+  const { language, t } = useLanguage();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export default function BlogPage() {
 
   useEffect(() => {
     loadPosts();
-  }, [page, sortBy, sortOrder, searchTerm]);
+  }, [page, sortBy, sortOrder, searchTerm, language]);
 
   const loadPosts = async () => {
     try {
@@ -47,6 +49,7 @@ export default function BlogPage() {
       params.append('limit', limit.toString());
       params.append('sortBy', sortBy);
       params.append('sortOrder', sortOrder);
+      params.append('language', language);
       if (searchTerm.trim()) {
         params.append('search', searchTerm.trim());
       }
@@ -69,7 +72,7 @@ export default function BlogPage() {
       }
     } catch (err: any) {
       console.error('Error fetching blog posts:', err);
-      setError('Blog yazıları yüklenirken bir hata oluştu.');
+      setError(t('blog.error') || 'Blog yazıları yüklenirken bir hata oluştu.');
     } finally {
       setLoading(false);
     }
@@ -83,7 +86,8 @@ export default function BlogPage() {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString('tr-TR', {
+    const locale = language === 'tr' ? 'tr-TR' : language === 'en' ? 'en-US' : 'ar-SA';
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -96,10 +100,10 @@ export default function BlogPage() {
       <main className="min-h-screen pt-20 bg-luxury-white dark:bg-luxury-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <h1 className="text-5xl font-serif mb-4 text-luxury-black dark:text-luxury-white">
-            Blog
+            {t('blog.title')}
           </h1>
           <p className="text-luxury-medium-gray mb-8">
-            Öngel Gayrimenkul&apos;den haberler, ipuçları ve güncel gelişmeler
+            {t('blog.subtitle')}
           </p>
 
           {/* Search and Filter Section */}
@@ -107,7 +111,7 @@ export default function BlogPage() {
             <form onSubmit={handleSearch} className="flex gap-4 flex-wrap">
               <input
                 type="text"
-                placeholder="Blog yazılarında ara..."
+                placeholder={t('blog.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 min-w-[200px] px-4 py-2 border border-luxury-silver focus:outline-none focus:border-luxury-black dark:bg-luxury-dark-gray dark:border-luxury-medium-gray dark:text-luxury-white"
@@ -116,7 +120,7 @@ export default function BlogPage() {
                 type="submit"
                 className="px-6 py-2 bg-luxury-black text-luxury-white hover:bg-luxury-dark-gray dark:bg-luxury-white dark:text-luxury-black dark:hover:bg-luxury-light-gray transition-colors"
               >
-                Ara
+                {t('blog.searchButton')}
               </button>
               {searchTerm && (
                 <button
@@ -127,13 +131,13 @@ export default function BlogPage() {
                   }}
                   className="px-6 py-2 border border-luxury-silver hover:bg-luxury-light-gray dark:border-luxury-medium-gray dark:hover:bg-luxury-dark-gray transition-colors"
                 >
-                  Temizle
+                  {t('blog.clear')}
                 </button>
               )}
             </form>
 
             <div className="flex gap-4 flex-wrap items-center">
-              <label className="text-sm text-luxury-medium-gray">Sırala:</label>
+              <label className="text-sm text-luxury-medium-gray">{t('blog.sortBy')}</label>
               <select
                 value={sortBy}
                 onChange={(e) => {
@@ -142,10 +146,10 @@ export default function BlogPage() {
                 }}
                 className="px-4 py-2 border border-luxury-silver focus:outline-none focus:border-luxury-black dark:bg-luxury-dark-gray dark:border-luxury-medium-gray dark:text-luxury-white"
               >
-                <option value="publishedAt">Yayın Tarihi</option>
-                <option value="createdAt">Oluşturulma Tarihi</option>
-                <option value="updatedAt">Güncelleme Tarihi</option>
-                <option value="title">Başlık</option>
+                <option value="publishedAt">{t('blog.sortByPublished')}</option>
+                <option value="createdAt">{t('blog.sortByCreated')}</option>
+                <option value="updatedAt">{t('blog.sortByUpdated')}</option>
+                <option value="title">{t('blog.sortByTitle')}</option>
               </select>
               <select
                 value={sortOrder}
@@ -155,12 +159,12 @@ export default function BlogPage() {
                 }}
                 className="px-4 py-2 border border-luxury-silver focus:outline-none focus:border-luxury-black dark:bg-luxury-dark-gray dark:border-luxury-medium-gray dark:text-luxury-white"
               >
-                <option value="DESC">Azalan</option>
-                <option value="ASC">Artan</option>
+                <option value="DESC">{t('blog.sortDesc')}</option>
+                <option value="ASC">{t('blog.sortAsc')}</option>
               </select>
               {searchTerm && (
                 <span className="text-sm text-luxury-medium-gray">
-                  {total} sonuç bulundu
+                  {total} {t('blog.resultsFound')}
                 </span>
               )}
             </div>
@@ -168,7 +172,7 @@ export default function BlogPage() {
 
           {loading && (
             <div className="text-center py-12 text-luxury-medium-gray">
-              Yükleniyor...
+              {t('blog.loading')}
             </div>
           )}
 
@@ -180,8 +184,8 @@ export default function BlogPage() {
 
           {!loading && !error && posts.length === 0 && (
             <div className="text-center py-12 text-luxury-medium-gray">
-              <p className="text-xl mb-4">Henüz blog yazısı bulunmamaktadır.</p>
-              <p>Yakında yeni içerikler eklenecektir.</p>
+              <p className="text-xl mb-4">{t('blog.noPosts')}</p>
+              <p>{t('blog.noPostsSoon')}</p>
             </div>
           )}
 
@@ -215,7 +219,7 @@ export default function BlogPage() {
                       <div className="flex items-center justify-between text-sm text-luxury-medium-gray">
                         <span>{formatDate(post.publishedAt)}</span>
                         <span className="group-hover:text-luxury-black dark:group-hover:text-luxury-white transition-colors">
-                          Devamını oku →
+                          {t('blog.readMore')}
                         </span>
                       </div>
                     </div>
@@ -230,31 +234,31 @@ export default function BlogPage() {
                     disabled={page === 1}
                     className="px-4 py-2 border border-luxury-silver dark:border-luxury-dark-gray text-luxury-black dark:text-luxury-white hover:bg-luxury-light-gray dark:hover:bg-luxury-dark-gray disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    İlk
+                    {t('blog.first')}
                   </button>
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
                     className="px-4 py-2 border border-luxury-silver dark:border-luxury-dark-gray text-luxury-black dark:text-luxury-white hover:bg-luxury-light-gray dark:hover:bg-luxury-dark-gray disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Önceki
+                    {t('blog.previous')}
                   </button>
                   <span className="px-4 py-2 text-luxury-medium-gray">
-                    Sayfa {page} / {totalPages} ({total} yazı)
+                    {t('blog.page')} {page} {t('blog.of')} {totalPages} ({total} {t('blog.posts')})
                   </span>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
                     className="px-4 py-2 border border-luxury-silver dark:border-luxury-dark-gray text-luxury-black dark:text-luxury-white hover:bg-luxury-light-gray dark:hover:bg-luxury-dark-gray disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Sonraki
+                    {t('blog.next')}
                   </button>
                   <button
                     onClick={() => setPage(totalPages)}
                     disabled={page === totalPages}
                     className="px-4 py-2 border border-luxury-silver dark:border-luxury-dark-gray text-luxury-black dark:text-luxury-white hover:bg-luxury-light-gray dark:hover:bg-luxury-dark-gray disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Son
+                    {t('blog.last')}
                   </button>
                 </div>
               )}
